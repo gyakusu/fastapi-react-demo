@@ -151,13 +151,30 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 # 簡易ユーザーデータベース（デモ用）
 # ==========================================
 # 実際のアプリケーションではデータベースを使用してください
-DEMO_USERS = {
-    "demo": {
-        "username": "demo",
-        "hashed_password": get_password_hash("demo123"),  # パスワード: demo123
-        "email": "demo@example.com"
-    }
-}
+# 注意: モジュールレベルでの初期化を避けるため、遅延初期化を使用
+_DEMO_USERS_CACHE = None
+
+
+def get_demo_users():
+    """
+    デモユーザーのデータを取得（遅延初期化）
+
+    モジュールインポート時にハッシュ化が実行されるのを避けるため、
+    初回呼び出し時にのみユーザーデータを生成します。
+
+    Returns:
+        デモユーザーの辞書
+    """
+    global _DEMO_USERS_CACHE
+    if _DEMO_USERS_CACHE is None:
+        _DEMO_USERS_CACHE = {
+            "demo": {
+                "username": "demo",
+                "hashed_password": get_password_hash("demo123"),  # パスワード: demo123
+                "email": "demo@example.com"
+            }
+        }
+    return _DEMO_USERS_CACHE
 
 
 def authenticate_user(username: str, password: str) -> Optional[dict]:
@@ -171,7 +188,8 @@ def authenticate_user(username: str, password: str) -> Optional[dict]:
     Returns:
         認証成功時はユーザー情報、失敗時はNone
     """
-    user = DEMO_USERS.get(username)
+    demo_users = get_demo_users()
+    user = demo_users.get(username)
     if not user:
         return None
     if not verify_password(password, user["hashed_password"]):

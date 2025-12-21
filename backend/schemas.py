@@ -10,7 +10,7 @@ APIリクエスト/レスポンスのデータ構造を定義します
 - BaseModelの継承と拡張
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -58,12 +58,7 @@ class TodoItemResponse(TodoItemBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        """
-        Pydanticの設定
-
-        from_attributes=True により、SQLAlchemyモデルから
-        直接Pydanticモデルに変換できる
-        （以前のバージョンでは orm_mode = True）
-        """
-        from_attributes = True
+    # Pydantic V2対応: class Config を model_config に変更
+    # from_attributes=True により、SQLAlchemyモデルから
+    # 直接Pydanticモデルに変換できる
+    model_config = ConfigDict(from_attributes=True)
