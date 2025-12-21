@@ -84,12 +84,16 @@ export async function handleFormSubmit(idx: number, columns: ColumnConfig[], inp
     }
 }
 
+
+import { Tabs, Tab } from "@mui/material";
+
 const DemoForm: React.FC = () => {
     const isMobile = useMediaQuery("(max-width:900px)");
     const [inputs, setInputs] = useState(["", "", ""]);
     const [responses, setResponses] = useState<(string | null)[]>([null, null, null]);
     const [loading, setLoading] = useState([false, false, false]);
     const [errors, setErrors] = useState<(string | null)[]>([null, null, null]);
+    const [tab, setTab] = useState(0);
 
     // ...existing code...
     // 入力変更ハンドラ
@@ -98,58 +102,87 @@ const DemoForm: React.FC = () => {
     const handleSubmit = async (idx: number) => handleFormSubmit(idx, columns, inputs, setLoading, setErrors, setResponses);
 
     return (
-        <Box
-            sx={{
-                p: 2,
-                border: "1px solid #eee",
-                borderRadius: 2,
-                boxShadow: 1,
-                background: "#fff",
-                width: "100%",
-            }}
-        >
-            <Typography variant={isMobile ? "h6" : "h4"} gutterBottom align="center">
-                APIデモフォーム
-            </Typography>
-            <Grid container spacing={2} direction={isMobile ? "column" : "row"}>
-                {columns.map((col, idx) => (
-                    <Grid item xs={12} md={4} key={col.endpoint}>
-                        <Paper sx={{ p: 2, minHeight: 250, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <Typography variant="h6" gutterBottom>{col.label}</Typography>
-                            <TextField
-                                label={col.label}
-                                type={col.inputType}
-                                value={inputs[idx]}
-                                onChange={e => handleChange(idx, e.target.value)}
-                                fullWidth
-                                disabled={loading[idx]}
-                                sx={{ mb: 2 }}
-                                inputProps={col.valueType === 'int' ? { step: 1, inputMode: 'numeric', pattern: "^-?\\d+$" } : {}}
-                            />
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                fullWidth
-                                disabled={loading[idx] || !inputs[idx]}
-                                onClick={() => handleSubmit(idx)}
-                                sx={{ mb: 2 }}
-                            >
-                                {loading[idx] ? <CircularProgress size={24} /> : "送信"}
-                            </Button>
-                            {responses[idx] && (
-                                <Alert severity="success" sx={{ width: "100%" }}>
-                                    {responses[idx]}
-                                </Alert>
-                            )}
-                            {errors[idx] && (
-                                <Alert severity="error" sx={{ width: "100%" }}>
-                                    {errors[idx]}
-                                </Alert>
-                            )}
-                        </Paper>
+        <Box sx={{ width: "100vw", maxWidth: 1200, minHeight: 600, mx: "auto", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Tabs value={tab} onChange={(_, v) => setTab(v)} centered sx={{ mb: 2 }}>
+                <Tab label="タブ1" />
+                <Tab label="タブ2" />
+            </Tabs>
+            {tab === 0 && (
+                <Box
+                    sx={{
+                        p: 6,
+                        border: "1px solid #eee",
+                        borderRadius: 3,
+                        boxShadow: 3,
+                        background: "#fff",
+                        width: "100%",
+                        minHeight: 500,
+                        maxWidth: 1000,
+                        mx: "auto",
+                    }}
+                >
+                    <Typography variant={isMobile ? "h6" : "h4"} gutterBottom align="center">
+                        APIデモフォーム
+                    </Typography>
+                    <Grid container spacing={2} direction={isMobile ? "column" : "row"}>
+                        {columns.map((col, idx) => (
+                            <Grid item xs={12} md={4} key={col.endpoint}>
+                                <Paper sx={{ p: 3, minHeight: 320, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                    <Typography variant="h6" gutterBottom>{col.label}</Typography>
+                                    <TextField
+                                        label={col.label}
+                                        type={col.inputType}
+                                        value={inputs[idx]}
+                                        onChange={e => handleChange(idx, e.target.value)}
+                                        fullWidth
+                                        disabled={loading[idx]}
+                                        sx={{ mb: 2 }}
+                                        inputProps={col.valueType === 'int' ? { step: 1, inputMode: 'numeric', pattern: "^-?\\d+$" } : {}}
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        fullWidth
+                                        disabled={loading[idx] || !inputs[idx]}
+                                        onClick={() => handleSubmit(idx)}
+                                        sx={{ mb: 2 }}
+                                    >
+                                        {loading[idx] ? <CircularProgress size={24} /> : "送信"}
+                                    </Button>
+                                    {responses[idx] && (
+                                        <Alert severity="success" sx={{ width: "100%" }}>
+                                            {responses[idx]}
+                                        </Alert>
+                                    )}
+                                    {errors[idx] && (
+                                        <Alert severity="error" sx={{ width: "100%" }}>
+                                            {errors[idx]}
+                                        </Alert>
+                                    )}
+                                </Paper>
+                            </Grid>
+                        ))}
                     </Grid>
-                ))}
-            </Grid>
+                </Box>
+            )}
+            {tab === 1 && (
+                <Box sx={{
+                    p: 6,
+                    border: "1px solid #eee",
+                    borderRadius: 3,
+                    boxShadow: 3,
+                    background: "#fff",
+                    width: "100%",
+                    minHeight: 500,
+                    maxWidth: 1000,
+                    mx: "auto",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}>
+                    <Typography variant="h6" color="text.secondary">まっさらなタブ2です</Typography>
+                </Box>
+            )}
         </Box>
     );
 };
