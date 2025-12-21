@@ -17,67 +17,85 @@ const columns: ColumnConfig[] = [
     { label: '文字列 (repeat)', endpoint: '/repeat', inputType: 'text', valueType: 'string' },
 ];
 
+
+
+// --- 分割: バリデーション ---
+export function validateInput(value: string, valueType: 'int' | 'float' | 'string'): string | null {
+    if (valueType === 'int') {
+        if (value === "") return null;
+        if (!/^-?\d+$/.test(value)) return "整数のみ入力可能です";
+    } else if (valueType === 'float') {
+        if (value === "") return null;
+        if (isNaN(Number(value))) return "実数のみ入力可能です";
+    }
+    return null;
+}
+
+// --- 分割: APIリクエスト ---
+export async function postValue(endpoint: string, value: any) {
+    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value }),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return await res.json();
+}
+
+// --- 分割: 入力変更ハンドラ ---
+export function handleInputChange(idx: number, value: string, columns: ColumnConfig[], setInputs: any, setErrors: any) {
+    const err = validateInput(value, columns[idx].valueType);
+    if (!err) {
+        setInputs((inputs: string[]) => inputs.map((v, i) => (i === idx ? value : v)));
+        setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? null : v)));
+    } else {
+        setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? err : v)));
+    }
+}
+
+// --- 分割: 送信ハンドラ ---
+export async function handleFormSubmit(idx: number, columns: ColumnConfig[], inputs: string[], setLoading: any, setErrors: any, setResponses: any) {
+    setLoading((l: boolean[]) => l.map((v, i) => (i === idx ? true : v)));
+    setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? null : v)));
+    setResponses((r: (string | null)[]) => r.map((v, i) => (i === idx ? null : v)));
+    let value: any = inputs[idx];
+    if (columns[idx].valueType === 'int') {
+        value = parseInt(value, 10);
+        if (isNaN(value)) {
+            setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? "整数を入力してください" : v)));
+            setLoading((l: boolean[]) => l.map((v, i) => (i === idx ? false : v)));
+            return;
+        }
+    } else if (columns[idx].valueType === 'float') {
+        value = parseFloat(value);
+        if (isNaN(value)) {
+            setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? "実数を入力してください" : v)));
+            setLoading((l: boolean[]) => l.map((v, i) => (i === idx ? false : v)));
+            return;
+        }
+    }
+    try {
+        const data = await postValue(columns[idx].endpoint, value);
+        setResponses((r: (string | null)[]) => r.map((v, i) => (i === idx ? JSON.stringify(data) : v)));
+    } catch (err: any) {
+        setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? (err.message || "通信エラー") : v)));
+    } finally {
+        setLoading((l: boolean[]) => l.map((v, i) => (i === idx ? false : v)));
+    }
+}
+
 const DemoForm: React.FC = () => {
     const isMobile = useMediaQuery("(max-width:900px)");
-    // 各カラムの状態を配列で管理
     const [inputs, setInputs] = useState(["", "", ""]);
     const [responses, setResponses] = useState<(string | null)[]>([null, null, null]);
     const [loading, setLoading] = useState([false, false, false]);
     const [errors, setErrors] = useState<(string | null)[]>([null, null, null]);
 
-    const handleChange = (idx: number, value: string) => {
-        // 整数欄は整数のみ許可
-        if (columns[idx].valueType === 'int') {
-            // 空欄は許可
-            if (value === "") {
-                setInputs(inputs => inputs.map((v, i) => (i === idx ? value : v)));
-                return;
-            }
-            // 正規表現で整数のみ許可
-            if (/^-?\d+$/.test(value)) {
-                setInputs(inputs => inputs.map((v, i) => (i === idx ? value : v)));
-            }
-            // それ以外は無視（入力値を更新しない）
-        } else {
-            setInputs(inputs => inputs.map((v, i) => (i === idx ? value : v)));
-        }
-    }
-
-    const handleSubmit = async (idx: number) => {
-        setLoading(l => l.map((v, i) => (i === idx ? true : v)));
-        setErrors(e => e.map((v, i) => (i === idx ? null : v)));
-        setResponses(r => r.map((v, i) => (i === idx ? null : v)));
-        let value: any = inputs[idx];
-        if (columns[idx].valueType === 'int') {
-            value = parseInt(value, 10);
-            if (isNaN(value)) {
-                setErrors(e => e.map((v, i) => (i === idx ? "整数を入力してください" : v)));
-                setLoading(l => l.map((v, i) => (i === idx ? false : v)));
-                return;
-            }
-        } else if (columns[idx].valueType === 'float') {
-            value = parseFloat(value);
-            if (isNaN(value)) {
-                setErrors(e => e.map((v, i) => (i === idx ? "実数を入力してください" : v)));
-                setLoading(l => l.map((v, i) => (i === idx ? false : v)));
-                return;
-            }
-        }
-        try {
-            const res = await fetch(`http://127.0.0.1:8000${columns[idx].endpoint}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ value }),
-            });
-            if (!res.ok) throw new Error(`API error: ${res.status}`);
-            const data = await res.json();
-            setResponses(r => r.map((v, i) => (i === idx ? JSON.stringify(data) : v)));
-        } catch (err: any) {
-            setErrors(e => e.map((v, i) => (i === idx ? (err.message || "通信エラー") : v)));
-        } finally {
-            setLoading(l => l.map((v, i) => (i === idx ? false : v)));
-        }
-    };
+    // ...existing code...
+    // 入力変更ハンドラ
+    const handleChange = (idx: number, value: string) => handleInputChange(idx, value, columns, setInputs, setErrors);
+    // 送信ハンドラ
+    const handleSubmit = async (idx: number) => handleFormSubmit(idx, columns, inputs, setLoading, setErrors, setResponses);
 
     return (
         <Box

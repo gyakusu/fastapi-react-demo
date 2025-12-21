@@ -7,7 +7,7 @@ import DemoForm from "./DemoForm";
 const App: React.FC = () => (
     <Box sx={{ flexGrow: 1 }}>
         <Header />
-        <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Container maxWidth="sm" sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'center' }}>
             <DemoForm />
         </Container>
     </Box>
