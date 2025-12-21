@@ -1,8 +1,15 @@
-
+# Linspace only endpoint
 from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+
+@app.post("/linspace")
+def linspace_endpoint(data: RangeInput):
+    x = np.linspace(data.x_min, data.x_max, 50)
+    return {"x": x.tolist()}
+
 
 app = FastAPI()
 

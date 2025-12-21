@@ -1,3 +1,10 @@
+def test_linspace():
+    response = client.post("/linspace", json={"x_min": 0, "x_max": 1})
+    assert response.status_code == 200
+    result = response.json()
+    arr = result["x"]
+    assert len(arr) == 50
+    assert all(not (isinstance(x, float) and math.isnan(x)) for x in arr)
 import pytest
 from fastapi.testclient import TestClient
 from main import app
