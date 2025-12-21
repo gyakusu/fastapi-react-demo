@@ -209,30 +209,33 @@ const DemoForm: React.FC = () => {
                     </Grid>
                 </Box>
             )}
-            {
-                tab === 1 && (
-                    <Box sx={{
-                        p: 6,
-                        border: "1px solid #eee",
-                        borderRadius: 3,
-                        boxShadow: 3,
-                        background: "#fff",
-                        width: "100%",
-                        minHeight: 500,
-                        maxWidth: 1000,
-                        mx: "auto",
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>配列API可視化</Typography>
-                        {plotLoading && <CircularProgress />}
-                        {plotError && <Alert severity="error">{plotError}</Alert>}
-                        {plotData && <SimplePlot data={plotData} />}
+            {tab === 1 && (
+                <Box sx={{
+                    p: 6,
+                    border: "1px solid #eee",
+                    borderRadius: 3,
+                    boxShadow: 3,
+                    background: "#fff",
+                    width: "100%",
+                    minHeight: 500,
+                    maxWidth: 1000,
+                    mx: "auto",
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                }}>
+                    <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>配列API可視化</Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+                        <TextField label="x_min" type="number" size="small" value={xMin} onChange={e => setXMin(Number(e.target.value))} />
+                        <TextField label="x_max" type="number" size="small" value={xMax} onChange={e => setXMax(Number(e.target.value))} />
+                        <Button variant="contained" onClick={fetchAndSetPlotData} disabled={plotLoading || xMin === xMax}>実行</Button>
                     </Box>
-                )
-            }
+                    {plotLoading && <CircularProgress />}
+                    {plotError && <Alert severity="error">{plotError}</Alert>}
+                    {plotData && <SimplePlot data={plotData} theme="modern" />}
+                </Box>
+            )}
         </Box >
     );
 };
