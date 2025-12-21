@@ -1,5 +1,16 @@
 
 import React, { useState } from "react";
+import { SimplePlot, PlotData } from "./SimplePlot";
+// --- タブ2: 配列可視化API ---
+async function fetchArrayAPI(endpoint: string, x_min = 0, x_max = 1) {
+    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ x_min, x_max }),
+    });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return await res.json();
+}
 import { Box, Typography, TextField, Button, useMediaQuery, CircularProgress, Alert, Grid, Paper } from "@mui/material";
 
 
@@ -94,12 +105,38 @@ const DemoForm: React.FC = () => {
     const [loading, setLoading] = useState([false, false, false]);
     const [errors, setErrors] = useState<(string | null)[]>([null, null, null]);
     const [tab, setTab] = useState(0);
+    // タブ2用
+    const [plotData, setPlotData] = useState<PlotData[]|null>(null);
+    const [plotLoading, setPlotLoading] = useState(false);
+    const [plotError, setPlotError] = useState<string|null>(null);
 
     // ...existing code...
     // 入力変更ハンドラ
     const handleChange = (idx: number, value: string) => handleInputChange(idx, value, columns, setInputs, setErrors);
     // 送信ハンドラ
     const handleSubmit = async (idx: number) => handleFormSubmit(idx, columns, inputs, setLoading, setErrors, setResponses);
+
+    // タブ2: API取得
+    React.useEffect(() => {
+        if (tab !== 1) return;
+        setPlotLoading(true);
+        setPlotError(null);
+        Promise.all([
+            fetchArrayAPI("/linspace"),
+            fetchArrayAPI("/exp_cos"),
+            fetchArrayAPI("/logistic"),
+            fetchArrayAPI("/multi_bump"),
+        ]).then(([lin, exp, logi, multi]) => {
+            setPlotData([
+                { x: lin.x, label: "linspace" },
+                { x: exp.x, y: exp.y, label: "exp_cos" },
+                { x: logi.x, y: logi.y, label: "logistic" },
+                { x: multi.x, y: multi.y, label: "multi_bump" },
+            ]);
+        }).catch(e => {
+            setPlotError(e.message || "API error");
+        }).finally(() => setPlotLoading(false));
+    }, [tab]);
 
     return (
         <Box sx={{ width: "100vw", maxWidth: 1200, minHeight: 600, mx: "auto", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -177,10 +214,14 @@ const DemoForm: React.FC = () => {
                     maxWidth: 1000,
                     mx: "auto",
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}>
-                    <Typography variant="h6" color="text.secondary">まっさらなタブ2です</Typography>
+                    <Typography variant="h6" color="text.secondary" sx={{mb:2}}>配列API可視化</Typography>
+                    {plotLoading && <CircularProgress />}
+                    {plotError && <Alert severity="error">{plotError}</Alert>}
+                    {plotData && <SimplePlot data={plotData} />}
                 </Box>
             )}
         </Box>
