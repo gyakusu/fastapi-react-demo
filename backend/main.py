@@ -5,12 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 
-@app.post("/linspace")
-def linspace_endpoint(data: RangeInput):
-    x = np.linspace(data.x_min, data.x_max, 50)
-    return {"x": x.tolist()}
-
-
 app = FastAPI()
 
 app.add_middleware(
@@ -29,6 +23,12 @@ class RangeInput(BaseModel):
     x_max: float
 
 # 1. Exponential and trigonometric combination
+
+
+@app.post("/linspace")
+def linspace_endpoint(data: RangeInput):
+    x = np.linspace(data.x_min, data.x_max, 50)
+    return {"x": x.tolist()}
 
 
 @app.post("/exp_cos")
