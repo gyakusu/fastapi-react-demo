@@ -106,9 +106,11 @@ const DemoForm: React.FC = () => {
     const [errors, setErrors] = useState<(string | null)[]>([null, null, null]);
     const [tab, setTab] = useState(0);
     // タブ2用
-    const [plotData, setPlotData] = useState<PlotData[]|null>(null);
+    const [plotData, setPlotData] = useState<PlotData[] | null>(null);
     const [plotLoading, setPlotLoading] = useState(false);
-    const [plotError, setPlotError] = useState<string|null>(null);
+    const [plotError, setPlotError] = useState<string | null>(null);
+    const [xMin, setXMin] = useState(0);
+    const [xMax, setXMax] = useState(1);
 
     // ...existing code...
     // 入力変更ハンドラ
@@ -117,15 +119,14 @@ const DemoForm: React.FC = () => {
     const handleSubmit = async (idx: number) => handleFormSubmit(idx, columns, inputs, setLoading, setErrors, setResponses);
 
     // タブ2: API取得
-    React.useEffect(() => {
-        if (tab !== 1) return;
+    const fetchAndSetPlotData = React.useCallback(() => {
         setPlotLoading(true);
         setPlotError(null);
         Promise.all([
-            fetchArrayAPI("/linspace"),
-            fetchArrayAPI("/exp_cos"),
-            fetchArrayAPI("/logistic"),
-            fetchArrayAPI("/multi_bump"),
+            fetchArrayAPI("/linspace", xMin, xMax),
+            fetchArrayAPI("/exp_cos", xMin, xMax),
+            fetchArrayAPI("/logistic", xMin, xMax),
+            fetchArrayAPI("/multi_bump", xMin, xMax),
         ]).then(([lin, exp, logi, multi]) => {
             setPlotData([
                 { x: lin.x, label: "linspace" },
@@ -136,6 +137,13 @@ const DemoForm: React.FC = () => {
         }).catch(e => {
             setPlotError(e.message || "API error");
         }).finally(() => setPlotLoading(false));
+    }, [xMin, xMax]);
+
+    // タブ2を開いたときは初回のみ自動取得
+    React.useEffect(() => {
+        if (tab !== 1) return;
+        fetchAndSetPlotData();
+        // eslint-disable-next-line
     }, [tab]);
 
     return (
@@ -145,22 +153,21 @@ const DemoForm: React.FC = () => {
                 <Tab label="タブ2" />
             </Tabs>
             {tab === 0 && (
-                <Box
-                    sx={{
-                        p: 6,
-                        border: "1px solid #eee",
-                        borderRadius: 3,
-                        boxShadow: 3,
-                        background: "#fff",
-                        width: "100%",
-                        minHeight: 500,
-                        maxWidth: 1000,
-                        mx: "auto",
-                    }}
-                >
-                    <Typography variant={isMobile ? "h6" : "h4"} gutterBottom align="center">
-                        APIデモフォーム
-                    </Typography>
+                <Box sx={{
+                    p: 6,
+                    border: "1px solid #eee",
+                    borderRadius: 3,
+                    boxShadow: 3,
+                    background: "#fff",
+                    width: "100%",
+                    minHeight: 500,
+                    maxWidth: 1000,
+                    mx: "auto",
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                }}>
                     <Grid container spacing={2} direction={isMobile ? "column" : "row"}>
                         {columns.map((col, idx) => (
                             <Grid item xs={12} md={4} key={col.endpoint}>
@@ -202,29 +209,31 @@ const DemoForm: React.FC = () => {
                     </Grid>
                 </Box>
             )}
-            {tab === 1 && (
-                <Box sx={{
-                    p: 6,
-                    border: "1px solid #eee",
-                    borderRadius: 3,
-                    boxShadow: 3,
-                    background: "#fff",
-                    width: "100%",
-                    minHeight: 500,
-                    maxWidth: 1000,
-                    mx: "auto",
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}>
-                    <Typography variant="h6" color="text.secondary" sx={{mb:2}}>配列API可視化</Typography>
-                    {plotLoading && <CircularProgress />}
-                    {plotError && <Alert severity="error">{plotError}</Alert>}
-                    {plotData && <SimplePlot data={plotData} />}
-                </Box>
-            )}
-        </Box>
+            {
+                tab === 1 && (
+                    <Box sx={{
+                        p: 6,
+                        border: "1px solid #eee",
+                        borderRadius: 3,
+                        boxShadow: 3,
+                        background: "#fff",
+                        width: "100%",
+                        minHeight: 500,
+                        maxWidth: 1000,
+                        mx: "auto",
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>配列API可視化</Typography>
+                        {plotLoading && <CircularProgress />}
+                        {plotError && <Alert severity="error">{plotError}</Alert>}
+                        {plotData && <SimplePlot data={plotData} />}
+                    </Box>
+                )
+            }
+        </Box >
     );
 };
 
