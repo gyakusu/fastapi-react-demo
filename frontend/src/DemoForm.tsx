@@ -1,9 +1,45 @@
+/**
+ * DemoForm コンポーネント
+ * ===============================================
+ * FastAPI バックエンドと通信するReactフロントエンドの例
+ *
+ * 学習ポイント:
+ * - React Hooksの使用 (useState, useEffect, useCallback)
+ * - fetch APIによる非同期通信
+ * - Material-UIコンポーネントの使用
+ * - フォームバリデーション
+ * - タブによるUI切り替え
+ * - エラーハンドリング
+ */
 
 import React, { useState } from "react";
 import { SimplePlot, PlotData } from "./SimplePlot";
-// --- タブ2: 配列可視化API ---
+import { Box, Typography, TextField, Button, useMediaQuery, CircularProgress, Alert, Grid, Paper } from "@mui/material";
+
+// ==========================================
+// 環境変数の読み込み
+// ==========================================
+// Reactの環境変数は process.env 経由でアクセス
+// REACT_APP_ で始まる環境変数のみが利用可能
+// 参考: https://create-react-app.dev/docs/adding-custom-environment-variables/
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
+
+// ==========================================
+// API通信関数
+// ==========================================
+
+/**
+ * 配列データを返すAPIエンドポイントを呼び出す関数
+ *
+ * @param endpoint - APIエンドポイントのパス（例: "/linspace"）
+ * @param x_min - x軸の最小値
+ * @param x_max - x軸の最大値
+ * @returns APIから返されたJSONデータ
+ */
 async function fetchArrayAPI(endpoint: string, x_min = 0, x_max = 1) {
-    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+    // fetchは非同期でHTTPリクエストを送信する標準API
+    // API_BASE_URL は環境変数から取得
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ x_min, x_max }),
@@ -11,17 +47,26 @@ async function fetchArrayAPI(endpoint: string, x_min = 0, x_max = 1) {
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return await res.json();
 }
-import { Box, Typography, TextField, Button, useMediaQuery, CircularProgress, Alert, Grid, Paper } from "@mui/material";
 
 
+// ==========================================
+// 型定義
+// ==========================================
 
+/**
+ * カラム（各API入力欄）の設定を定義する型
+ */
 type ColumnConfig = {
-    label: string;
-    endpoint: string;
-    inputType: string;
-    valueType: 'int' | 'float' | 'string';
+    label: string;        // 表示ラベル
+    endpoint: string;     // APIエンドポイントパス
+    inputType: string;    // HTML input要素のtype属性
+    valueType: 'int' | 'float' | 'string';  // バリデーション用の値の型
 };
 
+/**
+ * 3つのAPIエンドポイントの設定
+ * タブ1で使用する入力フォームの構成
+ */
 const columns: ColumnConfig[] = [
     { label: '整数 (double)', endpoint: '/double', inputType: 'number', valueType: 'int' },
     { label: '実数 (half)', endpoint: '/half', inputType: 'number', valueType: 'float' },
@@ -29,8 +74,17 @@ const columns: ColumnConfig[] = [
 ];
 
 
+// ==========================================
+// バリデーション関数
+// ==========================================
 
-// --- 分割: バリデーション ---
+/**
+ * 入力値をバリデーションする関数
+ *
+ * @param value - 入力された文字列
+ * @param valueType - 期待される値の型
+ * @returns エラーメッセージ（正常な場合はnull）
+ */
 export function validateInput(value: string, valueType: 'int' | 'float' | 'string'): string | null {
     if (valueType === 'int') {
         if (value === "") return null;
@@ -42,9 +96,15 @@ export function validateInput(value: string, valueType: 'int' | 'float' | 'strin
     return null;
 }
 
-// --- 分割: APIリクエスト ---
+/**
+ * 単一の値をAPIに送信する関数
+ *
+ * @param endpoint - APIエンドポイントのパス
+ * @param value - 送信する値（int, float, string）
+ * @returns APIから返されたJSONデータ
+ */
 export async function postValue(endpoint: string, value: any) {
-    const res = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ value }),

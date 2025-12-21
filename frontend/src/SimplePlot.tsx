@@ -1,20 +1,49 @@
+/**
+ * SimplePlot コンポーネント
+ * ===============================================
+ * SVGを使用したシンプルなグラフ描画コンポーネント
+ *
+ * 学習ポイント:
+ * - SVGによる描画の基本
+ * - データの可視化
+ * - React TypeScriptでの型定義
+ * - 座標変換とスケーリング
+ *
+ * このコンポーネントは外部ライブラリを使わず、純粋なSVGで
+ * グラフを描画することで、データ可視化の基礎を学べます。
+ */
+
 import React from "react";
 
+/**
+ * グラフに描画するデータの型定義
+ */
 export type PlotData = {
-    x: number[];
-    y?: number[];
-    label: string;
+    x: number[];      // x座標の配列
+    y?: number[];     // y座標の配列（オプション: linspaceのように点だけ表示する場合はなし）
+    label: string;    // データ系列のラベル（凡例に表示）
 };
 
+/**
+ * シンプルなグラフ描画コンポーネント
+ *
+ * @param data - 描画するデータの配列
+ * @param theme - テーマ（'modern'で背景グラデーション適用）
+ */
 export const SimplePlot: React.FC<{ data: PlotData[], theme?: 'modern' }>
     = ({ data, theme }) => {
-        // SVGサイズ
-        const width = 800; // 横幅拡大
+        // ==========================================
+        // SVGキャンバスのサイズ設定
+        // ==========================================
+        const width = 800;
         const height = 320;
-        const padding = 40;
-        const legendWidth = 120; // 凡例用余白
+        const padding = 40;        // 軸とラベル用のパディング
+        const legendWidth = 120;   // 凡例用の余白
 
-        // x/yの全データ範囲を取得
+        // ==========================================
+        // データの範囲を計算
+        // ==========================================
+        // 全てのデータ系列からx, y座標を取り出して、最小値・最大値を計算
         const allX = data.flatMap(d => d.x);
         const allY = data.flatMap(d => d.y ?? []);
         const minX = Math.min(...allX);
@@ -22,11 +51,25 @@ export const SimplePlot: React.FC<{ data: PlotData[], theme?: 'modern' }>
         const minY = allY.length ? Math.min(...allY) : 0;
         const maxY = allY.length ? Math.max(...allY) : 1;
 
-        // 座標変換
+        // ==========================================
+        // 座標変換関数
+        // ==========================================
+        // データの値をSVGキャンバス上のピクセル座標に変換
+
+        /**
+         * データのx座標をSVG上のx座標に変換
+         */
         const scaleX = (x: number) => padding + (x - minX) / (maxX - minX) * (width - 2 * padding - legendWidth);
+
+        /**
+         * データのy座標をSVG上のy座標に変換
+         * 注意: SVGはy軸が下向きなので、height から引いて上下反転
+         */
         const scaleY = (y: number) => height - padding - (y - minY) / (maxY - minY) * (height - 2 * padding);
 
-        // 軸ラベル・グリッド・点・凡例
+        // ==========================================
+        // SVG要素をレンダリング
+        // ==========================================
         return (
             <svg width={width} height={height} style={{ background: theme === 'modern' ? 'linear-gradient(120deg,#f8fafc,#e3e7ed 80%)' : '#fafafa', border: '1px solid #eee', borderRadius: 8 }}>
                 {/* グリッド */}

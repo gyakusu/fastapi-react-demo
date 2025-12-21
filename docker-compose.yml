@@ -1,0 +1,115 @@
+# Docker Compose 設定ファイル
+# ==========================================
+# FastAPI + React アプリケーションの開発環境を構築
+#
+# 学習ポイント:
+# - Docker Composeによる複数コンテナの管理
+# - サービス間の連携
+# - ボリュームマウントによる開発環境の構築
+# - ネットワーク設定
+#
+# 使い方:
+#   docker-compose up -d      # バックグラウンドで起動
+#   docker-compose logs -f    # ログを表示
+#   docker-compose down       # 停止・削除
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # バックエンド: FastAPI
+  # ==========================================
+  backend:
+    # Pythonの公式イメージを使用
+    image: python:3.11-slim
+    container_name: fastapi-backend
+
+    # 作業ディレクトリ
+    working_dir: /app
+
+    # ボリュームマウント（ホストとコンテナでファイルを共有）
+    volumes:
+      - ./backend:/app
+
+    # ポートマッピング（ホスト:コンテナ）
+    ports:
+      - "8000:8000"
+
+    # 環境変数ファイル
+    env_file:
+      - ./backend/.env
+
+    # コンテナ起動時のコマンド
+    command: >
+      sh -c "
+        pip install --no-cache-dir -r requirements.txt &&
+        uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+    # 依存関係: このサービスより先に起動すべきサービス
+    # （今回はバックエンドのみなので不要だが、PostgreSQLなどを使う場合に有用）
+    # depends_on:
+    #   - db
+
+    # ヘルスチェック
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================
+  # フロントエンド: React
+  # ==========================================
+  frontend:
+    # Node.jsの公式イメージを使用
+    image: node:18-alpine
+    container_name: react-frontend
+
+    # 作業ディレクトリ
+    working_dir: /app
+
+    # ボリュームマウント
+    volumes:
+      - ./frontend:/app
+      # node_modulesはコンテナ内に保持（ホストと共有しない）
+      - /app/node_modules
+
+    # ポートマッピング
+    ports:
+      - "3000:3000"
+
+    # 環境変数ファイル
+    env_file:
+      - ./frontend/.env
+
+    # コンテナ起動時のコマンド
+    command: >
+      sh -c "
+        npm install &&
+        npm start
+      "
+
+    # バックエンドの起動を待つ
+    depends_on:
+      - backend
+
+    # 環境変数（Reactの開発サーバー用）
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # ファイル変更検知をポーリングで行う
+
+# ==========================================
+# ネットワーク設定（オプション）
+# ==========================================
+# デフォルトのネットワークを使用する場合は不要
+# networks:
+#   app-network:
+#     driver: bridge
+
+# ==========================================
+# ボリューム設定（オプション）
+# ==========================================
+# 永続化が必要なデータ（データベースなど）を保存
+# volumes:
+#   postgres-data:

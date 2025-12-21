@@ -3,3 +3,8 @@ uvicorn
 numpy
 httpx
 pytest
+python-dotenv
+sqlalchemy
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
