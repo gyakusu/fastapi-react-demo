@@ -4,6 +4,14 @@ from main import app
 from fastapi.testclient import TestClient
 
 
+client = TestClient(app)
+
+
+@pytest.mark.parametrize("endpoint", [
+    "/exp_cos",
+    "/logistic",
+    "/multi_bump"
+])
 def test_linspace():
     response = client.post("/linspace", json={"x_min": 0, "x_max": 1})
     assert response.status_code == 200
@@ -13,14 +21,6 @@ def test_linspace():
     assert all(not (isinstance(x, float) and math.isnan(x)) for x in arr)
 
 
-client = TestClient(app)
-
-
-@pytest.mark.parametrize("endpoint", [
-    "/exp_cos",
-    "/logistic",
-    "/multi_bump"
-])
 def test_api_array_length_and_nan(endpoint):
     data = {"x_min": 0, "x_max": 1}
     response = client.post(endpoint, json=data)
