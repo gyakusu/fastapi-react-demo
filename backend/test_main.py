@@ -17,7 +17,7 @@ def test_linspace():
     assert response.status_code == 200
     result = response.json()
     arr = result["x"]
-    assert len(arr) == 50
+    assert len(arr) == 100
     assert all(not (isinstance(x, float) and math.isnan(x)) for x in arr)
 
 
@@ -28,7 +28,7 @@ def test_api_array_length_and_nan(endpoint):
     result = response.json()
     assert "y" in result
     arr = result["y"]
-    assert len(arr) == 50
+    assert len(arr) == 100
     assert all(not (isinstance(x, float) and math.isnan(x)) for x in arr)
 
 

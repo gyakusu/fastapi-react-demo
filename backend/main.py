@@ -27,13 +27,13 @@ class RangeInput(BaseModel):
 
 @app.post("/linspace")
 def linspace_endpoint(data: RangeInput):
-    x = np.linspace(data.x_min, data.x_max, 50)
+    x = np.linspace(data.x_min, data.x_max, 100)
     return {"x": x.tolist()}
 
 
 @app.post("/exp_cos")
 def exp_cos(data: RangeInput):
-    x = np.linspace(data.x_min, data.x_max, 50)
+    x = np.linspace(data.x_min, data.x_max, 100)
     y = np.exp(-3 * x) * np.cos(2 * np.pi * 5 * x)
     return {"x": x.tolist(), "y": y.tolist()}
 
@@ -42,7 +42,7 @@ def exp_cos(data: RangeInput):
 
 @app.post("/logistic")
 def logistic(data: RangeInput):
-    x = np.linspace(data.x_min, data.x_max, 50)
+    x = np.linspace(data.x_min, data.x_max, 100)
     y = 1 / (1 + np.exp(-10 * (x - 0.5)))
     return {"x": x.tolist(), "y": y.tolist()}
 
@@ -51,9 +51,8 @@ def logistic(data: RangeInput):
 
 @app.post("/multi_bump")
 def multi_bump(data: RangeInput):
-    x = np.linspace(data.x_min, data.x_max, 50)
-    y = np.sin(x * np.pi) + 0.5 * np.sin(x * 3 * np.pi) + \
-        0.2 * np.random.normal(0, 0.05, 50)
+    x = np.linspace(data.x_min, data.x_max, 100)
+    y = np.sin(x * np.pi) + 0.5 * np.sin(x * 3 * np.pi)
     return {"x": x.tolist(), "y": y.tolist()}
 
 
