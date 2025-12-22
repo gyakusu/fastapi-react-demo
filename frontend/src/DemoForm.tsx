@@ -183,13 +183,11 @@ const DemoForm: React.FC = () => {
         setPlotLoading(true);
         setPlotError(null);
         Promise.all([
-            fetchArrayAPI("/linspace", xMin, xMax),
             fetchArrayAPI("/exp_cos", xMin, xMax),
             fetchArrayAPI("/logistic", xMin, xMax),
             fetchArrayAPI("/multi_bump", xMin, xMax),
-        ]).then(([lin, exp, logi, multi]) => {
+        ]).then(([exp, logi, multi]) => {
             setPlotData([
-                { x: lin.x, label: "linspace" },
                 { x: exp.x, y: exp.y, label: "exp_cos" },
                 { x: logi.x, y: logi.y, label: "logistic" },
                 { x: multi.x, y: multi.y, label: "multi_bump" },
