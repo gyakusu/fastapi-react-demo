@@ -55,7 +55,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         パスワードが一致すればTrue、そうでなければFalse
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    # bcrypt はパスワードを最大72バイトまでしか扱えません。
+    # もし意図せず長い値が渡された場合に例外になるのを防ぐため、
+    # UTF-8でエンコードしたバイト列を72バイトに切り詰めてから検証します。
+    def _truncate_to_72_bytes(s: str) -> str:
+        b = s.encode("utf-8")
+        if len(b) <= 72:
+            return s
+        return b[:72].decode("utf-8", errors="ignore")
+
+    return pwd_context.verify(_truncate_to_72_bytes(plain_password), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
@@ -68,6 +77,10 @@ def get_password_hash(password: str) -> str:
     Returns:
         ハッシュ化されたパスワード
     """
+    # bcrypt の72バイト制限に合わせて切り詰めてからハッシュ化する
+    b = password.encode("utf-8")
+    if len(b) > 72:
+        password = b[:72].decode("utf-8", errors="ignore")
     return pwd_context.hash(password)
 
 
