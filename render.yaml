@@ -16,7 +16,7 @@ services:
         value: production
       - key: CORS_ORIGINS
         # set this to your frontend URL (example below). Update in Render Dashboard.
-        value: https://<your-frontend>.onrender.com
+        value: https://fastapi-react-frontend.onrender.com
       - key: JWT_SECRET_KEY
         value: "REPLACE_THIS_WITH_A_SECRET"
 
