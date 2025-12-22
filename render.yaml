@@ -1,0 +1,39 @@
+# Render service definitions for fastapi-react-demo
+# Replace placeholder values (domains, secrets) in the Render dashboard after connecting the repo.
+
+services:
+  - type: web
+    name: fastapi-backend
+    env: python
+    branch: main
+    root: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    plan: starter
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        # set this to your frontend URL (example below). Update in Render Dashboard.
+        value: https://<your-frontend>.onrender.com
+      - key: JWT_SECRET_KEY
+        value: "REPLACE_THIS_WITH_A_SECRET"
+
+  - type: static-site
+    name: react-frontend
+    branch: main
+    root: frontend
+    buildCommand: npm install && npm run build
+    publishPath: build
+    autoDeploy: true
+    envVars:
+      - key: REACT_APP_API_BASE_URL
+        value: https://fastapi-react-demo.onrender.com
+
+databases:
+  - name: app-db
+    engine: POSTGRES
+    plan: starter
+    # Render will provide a connection string after creation; copy it into
+    # the backend's DATABASE_URL environment variable in the dashboard.
