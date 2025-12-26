@@ -15,6 +15,8 @@
 import React, { useState } from "react";
 import { SimplePlot, PlotData } from "./SimplePlot";
 import { Box, Typography, TextField, Button, useMediaQuery, CircularProgress, Alert, Grid, Paper } from "@mui/material";
+import { useFetch } from "./hooks/useFetch";
+import { HttpLog } from "./types/HttpLog";
 
 // ==========================================
 // 環境変数の読み込み
@@ -29,23 +31,25 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:800
 // ==========================================
 
 /**
- * 配列データを返すAPIエンドポイントを呼び出す関数
+ * 配列データを返すAPIエンドポイントを呼び出す関数（useFetch対応）
  *
+ * @param execute - useFetchフックのexecute関数
  * @param endpoint - APIエンドポイントのパス（例: "/linspace"）
  * @param x_min - x軸の最小値
  * @param x_max - x軸の最大値
  * @returns APIから返されたJSONデータ
  */
-async function fetchArrayAPI(endpoint: string, x_min = 0, x_max = 1) {
-    // fetchは非同期でHTTPリクエストを送信する標準API
-    // API_BASE_URL は環境変数から取得
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+async function fetchArrayAPI(
+    execute: (url: string, options: any) => Promise<any>,
+    endpoint: string,
+    x_min = 0,
+    x_max = 1
+) {
+    return await execute(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ x_min, x_max }),
+        body: { x_min, x_max },
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return await res.json();
 }
 
 
@@ -97,20 +101,23 @@ export function validateInput(value: string, valueType: 'int' | 'float' | 'strin
 }
 
 /**
- * 単一の値をAPIに送信する関数
+ * 単一の値をAPIに送信する関数（useFetch対応）
  *
+ * @param execute - useFetchフックのexecute関数
  * @param endpoint - APIエンドポイントのパス
  * @param value - 送信する値（int, float, string）
  * @returns APIから返されたJSONデータ
  */
-export async function postValue(endpoint: string, value: any) {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+export async function postValue(
+    execute: (url: string, options: any) => Promise<any>,
+    endpoint: string,
+    value: any
+) {
+    return await execute(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value }),
+        body: { value },
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return await res.json();
 }
 
 // --- 分割: 入力変更ハンドラ ---
@@ -125,7 +132,15 @@ export function handleInputChange(idx: number, value: string, columns: ColumnCon
 }
 
 // --- 分割: 送信ハンドラ ---
-export async function handleFormSubmit(idx: number, columns: ColumnConfig[], inputs: string[], setLoading: any, setErrors: any, setResponses: any) {
+export async function handleFormSubmit(
+    idx: number,
+    columns: ColumnConfig[],
+    inputs: string[],
+    setLoading: any,
+    setErrors: any,
+    setResponses: any,
+    execute: (url: string, options: any) => Promise<any>
+) {
     setLoading((l: boolean[]) => l.map((v, i) => (i === idx ? true : v)));
     setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? null : v)));
     setResponses((r: (string | null)[]) => r.map((v, i) => (i === idx ? null : v)));
@@ -146,7 +161,7 @@ export async function handleFormSubmit(idx: number, columns: ColumnConfig[], inp
         }
     }
     try {
-        const data = await postValue(columns[idx].endpoint, value);
+        const data = await postValue(execute, columns[idx].endpoint, value);
         setResponses((r: (string | null)[]) => r.map((v, i) => (i === idx ? JSON.stringify(data) : v)));
     } catch (err: any) {
         setErrors((e: (string | null)[]) => e.map((v, i) => (i === idx ? (err.message || "通信エラー") : v)));
@@ -158,7 +173,11 @@ export async function handleFormSubmit(idx: number, columns: ColumnConfig[], inp
 
 import { Tabs, Tab } from "@mui/material";
 
-const DemoForm: React.FC = () => {
+type DemoFormProps = {
+    onLogUpdate: (log: HttpLog) => void;
+};
+
+const DemoForm: React.FC<DemoFormProps> = ({ onLogUpdate }) => {
     const isMobile = useMediaQuery("(max-width:900px)");
     const [inputs, setInputs] = useState(["", "", ""]);
     const [responses, setResponses] = useState<(string | null)[]>([null, null, null]);
@@ -172,20 +191,22 @@ const DemoForm: React.FC = () => {
     const [xMin, setXMin] = useState(0);
     const [xMax, setXMax] = useState(1);
 
-    // ...existing code...
+    // useFetchフックを使用
+    const { execute } = useFetch(onLogUpdate);
+
     // 入力変更ハンドラ
     const handleChange = (idx: number, value: string) => handleInputChange(idx, value, columns, setInputs, setErrors);
     // 送信ハンドラ
-    const handleSubmit = async (idx: number) => handleFormSubmit(idx, columns, inputs, setLoading, setErrors, setResponses);
+    const handleSubmit = async (idx: number) => handleFormSubmit(idx, columns, inputs, setLoading, setErrors, setResponses, execute);
 
     // タブ2: API取得
     const fetchAndSetPlotData = React.useCallback(() => {
         setPlotLoading(true);
         setPlotError(null);
         Promise.all([
-            fetchArrayAPI("/exp_cos", xMin, xMax),
-            fetchArrayAPI("/logistic", xMin, xMax),
-            fetchArrayAPI("/multi_bump", xMin, xMax),
+            fetchArrayAPI(execute, "/exp_cos", xMin, xMax),
+            fetchArrayAPI(execute, "/logistic", xMin, xMax),
+            fetchArrayAPI(execute, "/multi_bump", xMin, xMax),
         ]).then(([exp, logi, multi]) => {
             setPlotData([
                 { x: exp.x, y: exp.y, label: "exp_cos" },
@@ -195,7 +216,7 @@ const DemoForm: React.FC = () => {
         }).catch(e => {
             setPlotError(e.message || "API error");
         }).finally(() => setPlotLoading(false));
-    }, [xMin, xMax]);
+    }, [execute, xMin, xMax]);
 
     // タブ2を開いたときは初回のみ自動取得
     React.useEffect(() => {
